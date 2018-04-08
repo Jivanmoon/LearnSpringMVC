@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:mvc="http://www.springframework.org/schema/mvc"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:aop="http://www.springframework.org/schema/aop" xmlns:tx="http://www.springframework.org/schema/tx"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans 
+		http://www.springframework.org/schema/beans/spring-beans-3.2.xsd 
+		http://www.springframework.org/schema/mvc 
+		http://www.springframework.org/schema/mvc/spring-mvc-3.2.xsd 
+		http://www.springframework.org/schema/context 
+		http://www.springframework.org/schema/context/spring-context-3.2.xsd 
+		http://www.springframework.org/schema/aop 
+		http://www.springframework.org/schema/aop/spring-aop-3.2.xsd 
+		http://www.springframework.org/schema/tx 
+		http://www.springframework.org/schema/tx/spring-tx-3.2.xsd ">
+	
+	<!-- 静态资源的解析，包括js，css，img。。。 -->
+	<mvc:resources location="/js/" mapping="/js/**"/>
+	
+	<!-- 扫描controller注解,多个包中间使用半角逗号分隔 -->
+	<context:component-scan base-package="com.jiayifan.ssm.controller"/>
+	
+	<!-- 使用mvc:annotation-driven代替上边的注解映射器 和注解适配器配置
+	mvc：annotation-driven默认加载很多参数绑定方法，比如json转换的解析器
+	如果使用了<mvc:annotation-driven></mvc:annotation-driven>就不用配置上面
+	的注解映射器和注解适配器，实际开发中使用下面的方法
+	-->
+	<mvc:annotation-driven conversion-service="conversionService" validator="validator">
+	</mvc:annotation-driven>
+	
+	<!-- 视图解析器 
+	解析jsp视图，默认使用jstl标签，classpath下要有jstl的jar包 -->
+	
+	<bean class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+		<property name="prefix" value="/WEB-INF/jsp/"></property>
+		<property name="suffix" value=".jsp"></property>
+	</bean> 
+	<!-- 自定义参数绑定 -->
+	<bean id="conversionService"
+		class="org.springframework.format.support.FormattingConversionServiceFactoryBean">
+		<!-- 转换器 -->
+		<property name="converters">
+			<list>
+				<!-- 日期类型的转换 -->
+				<bean class="com.jiayifan.ssm.controller.converter.CustomDateConverter"/>
+			</list>
+		</property>
+	</bean>
+	<!-- 校验器 -->
+	<bean id="validator"
+		class="org.springframework.validation.beanvalidation.LocalValidatorFactoryBean">
+		<!-- 校验器-->
+		<property name="providerClass" value="org.hibernate.validator.HibernateValidator" />
+		<!-- 指定校验使用的资源文件，如果不指定则默认使用classpath下的ValidationMessages.properties -->
+		<property name="validationMessageSource" ref="messageSource" />
+	</bean>
+	<!-- 校验错误信息配置文件 -->
+	<bean id="messageSource"
+		class="org.springframework.context.support.ReloadableResourceBundleMessageSource">
+		<!-- 资源文件名-->
+		<property name="basenames">   
+       	 <list>    
+            <value>classpath:CustomValidationMessages</value> 
+       	 </list>   
+    	</property>
+		<!-- 资源文件编码格式 -->
+		<property name="defaultEncoding" value="utf-8" />
+		<!-- 对资源文件内容缓存时间，单位秒 -->
+		<property name="cacheSeconds" value="120" />
+	</bean>
+	<!-- 全局异常处理器 
+	只有实现了 HandlerExceptionResolver接口就是全局异常处理器
+	-->
+	<bean class="com.jiayifan.ssm.exception.CustomExceptionResolver"></bean>
+	<!-- 文件上传 -->
+	<bean id="multipartResolver"
+		class="org.springframework.web.multipart.commons.CommonsMultipartResolver">
+		<!-- 设置上传文件的最大尺寸为5MB -->
+		<property name="maxUploadSize">
+			<value>5242880</value>
+		</property>
+	</bean>
+	<!--拦截器 -->
+	<mvc:interceptors>
+		<!--多个拦截器,顺序执行 -->
+		<!-- 登录认证拦截器 -->
+		<mvc:interceptor>
+			<mvc:mapping path="/**"/>
+			<bean class="com.jiayifan.ssm.interceptor.LoginInerceptor"></bean>
+		</mvc:interceptor>
+		<mvc:interceptor>
+			<!-- /**表示拦截所有的url，包括子url路径 -->
+			<mvc:mapping path="/**"/>
+			<bean class="com.jiayifan.ssm.interceptor.HandlerInterceptorone"></bean>
+		</mvc:interceptor>
+		<mvc:interceptor>
+			<mvc:mapping path="/**"/>
+			<bean class="com.jiayifan.ssm.interceptor.HandlerInterceptoronetwo"></bean>
+		</mvc:interceptor>
+	</mvc:interceptors>
+</beans>
